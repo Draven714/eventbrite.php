@@ -9,7 +9,8 @@ class Eventbrite
 	/**
 	 * Eventbrite API endpoint
 	 */
-	var $api_endpoint = "https://www.eventbrite.com/json/";
+	//var $api_endpoint = "https://www.eventbrite.com/json/";
+	var $api_endpoint = "https://developer.eventbrite.com/json/";
 
 	/**
 	 * Eventbrite API key (REQUIRED)
@@ -56,7 +57,8 @@ class Eventbrite
 			'client_secret'=> $tokens['client_secret'], 
 			'code'=> $tokens['access_code']);
 
-		$request_url = $this->api_url['scheme'] . "://" . $this->api_url['host'] . '/oauth/token';
+		//$request_url = $this->api_url['scheme'] . "://" . $this->api_url['host'] . '/oauth/token';
+		$request_url = "https://www.eventbrite.com/oauth/token";
 
 		/*
 		 * TODO: Replace the cURL code with something a bit more modern - 
@@ -109,9 +111,10 @@ class Eventbrite
 		$request_url = $this->api_url['scheme']."://".$this->api_url['host'].$this->api_url['path'].$method.'?'.http_build_query($params,'','&');
 
 		# Call the API
-		if(!isset($this->auth_tokens['access_token']))
-		{
+		//if(!isset($this->auth_tokens['access_token']))
+		//{
 			$resp = file_get_contents($request_url);
+		/*
 		}
 		else {
 			$options = array(
@@ -120,6 +123,7 @@ class Eventbrite
 			);
 			$resp = file_get_contents($request_url, false, stream_context_create($options));
 		}
+		 */
 
 		# Parse our response
 		if($resp)
@@ -142,6 +146,11 @@ class Eventbrite
 		$user = false;
 		$response = array();
 
+		//echo "-Auth_Token Array-<br>";
+		//print_r($auth_tokens);
+		//echo "Access Code: ".$auth_tokens['access_code']."<br>";
+		//echo "Error Message: ".$auuth_tokens['error_message']."<br>";
+
 		# Attempt to authenticate this user using an access_token, if available
 		if(!isset($auth_tokens['access_token']))
 		{
@@ -149,7 +158,7 @@ class Eventbrite
 			{
 				$auth_tokens['access_token'] = $get_token();
 			}
-			elseif(is_callable(array('self',$get_token)))
+			elseif(is_callable(array('self', $get_token)))
 			{
 				$auth_tokens['access_token'] = self::$get_token();
 			}
@@ -158,6 +167,7 @@ class Eventbrite
 		{
 			try
 			{
+				//echo "<br><br>auth_tokens['access_token'] Value: ".$auth_tokens['access_token']."<br>";
 				# Example using an access_token to initialize the API client:
 				$eb = new Eventbrite(array('access_token' => $auth_tokens['access_token']));
 				$user = $eb->user_get()->user;
@@ -173,7 +183,7 @@ class Eventbrite
 				{
 					$delete_token($auth_tokens['access_token']);
 				}
-				elseif(is_callable(array('self',$delete_token)))
+				elseif(is_callable(array('self', $delete_token)))
 				{
 					self::$delete_token($auth_tokens['access_token']);
 				}
@@ -200,11 +210,13 @@ class Eventbrite
 					{
 						$save_token($response['access_token']);
 					}
-					elseif(is_callable(array('self',$save_token)))
+					elseif(is_callable(array('self', $save_token)))
 					{
+						//echo "Save Token 2: ".$save_token."<br>";
+						//echo "Access Token: ".$response['access_token'];
 						self::$save_token($response['access_token']);
 					}
-					header('Location: ' . $_SERVER['PHP_SELF']);
+					header('Location: '.$_SERVER['PHP_SELF']);
 					exit;
 				}
 				catch (Exception $e)
@@ -251,7 +263,7 @@ class Eventbrite
 			$html .= "<p><a class='button' href='{$params['oauth_link']}'>Login with Eventbrite</a></p></div>";
 		}
 		else {
-			$html .= "<div><h2>Eventbrite widgetHTML template example fail :(</h2></div>";
+			$html .= "<div><h2>Eventbrite widgetHTML template example fail:</h2></div>";
 		}  
 		$html .= "</div>";
 
@@ -322,7 +334,11 @@ class Eventbrite
 	 */
 	public static function saveAccessToken($access_token)
 	{
+		//echo "<br><br>-Function saveAccessToken-<br>";
+		//echo "Access Token: ".$access_token."<br>";
 		$_SESSION['EB_OAUTH_ACCESS_TOKEN'] = $access_token;
+		//echo '$_SESSION: ';
+		//print_r($_SESSION);
 	}
 
 	/**
@@ -365,7 +381,7 @@ class Eventbrite
 			Eventbrite::deleteAccessToken(); 
 
 			# remove our "logout=true" trigger from the querystring-
-			header("Location: " . $_SERVER['PHP_SELF']);
+			header("Location: ".$_SERVER['PHP_SELF']);
 			exit;
 		}
 
@@ -409,14 +425,30 @@ class Eventbrite
 			}
 		}
 
+		//echo "<br>Response: ";
+		//print_r($response);
+		//echo "<br>Options: ";
+		//print_r($options);
+
+		echo "<br><br>-Response Array-<br>";
+		echo "Login Error: ".$response['login_error']."<br>";
+
+		echo "<br><br>-Options Array-<br>";
+		echo "Access Code: ".$options['access_code']."<br>";
+		echo "Error Message: ".$options['error_message']."<br>";
+
 		# view related work:
 		#  render your "template"
 		if(is_callable($render_login_box))
 		{
 			return $render_login_box($login_params);
 		}
-		elseif(is_callable(array('self',$render_login_box)))
+		elseif(is_callable(array('self', $render_login_box)))
 		{
+			echo "<br><br>-Login_Params-<br>";
+			echo "Login Error: ".$login_params['login_error']."<br>";
+			echo "Logout Link: ".$login_params['logout_link']."<br>";
+			//print_r($login_params);
 			return self::$render_login_box($login_params);  
 		}
 		else {
